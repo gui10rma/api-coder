@@ -1,13 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/usuarioController');
-const authMiddleware = require('../middleware/authMiddleware'); // Importa o middleware de autenticação
+const authMiddleware = require('../middleware/authMiddleware'); 
 
-// Rotas públicas (não precisam de token)
+// Rotas públicas
 router.post('/registrar', controller.registrar);
 router.post('/login', controller.login);
 
-// NOVA ROTA: Rota protegida para salvar a pontuação do usuário
+// Rota protegida para salvar a pontuação
 router.post('/salvar-pontuacao', authMiddleware, controller.salvarPontuacao);
+
+// ✅ NOVO: Rota protegida para buscar as pontuações do usuário
+router.get('/pontuacoes', authMiddleware, controller.buscarPontuacoes); // <--- ADICIONE ESTA LINHA
 
 module.exports = router;

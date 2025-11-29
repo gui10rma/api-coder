@@ -81,13 +81,35 @@ exports.salvarPontuacao = async (req, res) => {
             return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
         }
 
-        res.json({ 
+        res.json({
             mensagem: 'Pontuação da missão atualizada com sucesso!',
-            pontuacoes: usuarioAtualizado.missoes 
+            pontuacoes: usuarioAtualizado.missoes
         });
 
     } catch (err) {
         console.error('Erro ao salvar pontuação:', err);
         res.status(500).json({ mensagem: 'Erro interno ao salvar pontuação.' });
     }
+    exports.buscarPontuacoes = async (req, res) => {
+        const usuarioId = req.usuarioId; // Obtido do token via authMiddleware
+
+        try {
+            // 1. Encontra o usuário pelo ID
+            const usuario = await Usuario.findById(usuarioId).select('missoes');
+
+            if (!usuario) {
+                return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
+            }
+
+            // 2. Retorna o mapa de missões (pontuações)
+            res.json({
+                mensagem: 'Pontuações carregadas com sucesso.',
+                pontuacoes: usuario.missoes
+            });
+
+        } catch (err) {
+            console.error('Erro ao buscar pontuações:', err);
+            res.status(500).json({ mensagem: 'Erro interno ao buscar pontuações.' });
+        }
+    };
 };
