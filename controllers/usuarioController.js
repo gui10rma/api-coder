@@ -53,18 +53,16 @@ exports.login = async (req, res) => {
     }
 };
 
-// --- NOVA ROTA: SALVAR PONTUAÇÃO (UPSERT) ---
+// --- ROTA PROTEGIDA: SALVAR PONTUAÇÃO (UPSERT) ---
 exports.salvarPontuacao = async (req, res) => {
     const usuarioId = req.usuarioId; // Obtido do token via authMiddleware
-    const { nomeMissao, novaPontuacao } = req.body; // Ex: nomeMissao='Missao1', novaPontuacao=100
+    const { nomeMissao, novaPontuacao } = req.body;
 
     if (!nomeMissao || typeof novaPontuacao !== 'number') {
         return res.status(400).json({ mensagem: 'Dados da missão inválidos.' });
     }
 
     try {
-        // NOVO CÓDIGO: Usa $set para ATUALIZAR/SUBSTITUIR a pontuação.
-        // O ponto crucial é 'missoes.' + nomeMissao (para acessar o mapa)
         const update = {
             $set: {
                 [`missoes.${nomeMissao}`]: novaPontuacao // Substitui o valor.
@@ -90,26 +88,30 @@ exports.salvarPontuacao = async (req, res) => {
         console.error('Erro ao salvar pontuação:', err);
         res.status(500).json({ mensagem: 'Erro interno ao salvar pontuação.' });
     }
-    exports.buscarPontuacoes = async (req, res) => {
-        const usuarioId = req.usuarioId; // Obtido do token via authMiddleware
+};
 
-        try {
-            // 1. Encontra o usuário pelo ID
-            const usuario = await Usuario.findById(usuarioId).select('missoes');
+// --- ROTA PROTEGIDA: BUSCAR PONTUAÇÕES ---
+exports.buscarPontuacoes = async (req, res) => {
+    const usuarioId = req.usuarioId; // Obtido do token via authMiddleware
 
-            if (!usuario) {
-                return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
-            }
+    try {
+        // 1. Encontra o usuário pelo ID
+        // .select('missoes') garante que apenas o mapa de pontuações seja retornado
+        const usuario = await Usuario.findById(usuarioId).select('missoes');
 
-            // 2. Retorna o mapa de missões (pontuações)
-            res.json({
-                mensagem: 'Pontuações carregadas com sucesso.',
-                pontuacoes: usuario.missoes
-            });
-
-        } catch (err) {
-            console.error('Erro ao buscar pontuações:', err);
-            res.status(500).json({ mensagem: 'Erro interno ao buscar pontuações.' });
+        if (!usuario) {
+            return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
         }
-    };
+
+        // 2. Retorna o mapa de missões (pontuações)
+        res.json({
+            mensagem: 'Pontuações carregadas com sucesso.',
+            // Garante que se o objeto missoes estiver vazio, ele retorne um objeto vazio.
+            pontuacoes: usuario.missoes || {} 
+        });
+
+    } catch (err) {
+        console.error('Erro ao buscar pontuações:', err);
+        res.status(500).json({ mensagem: 'Erro interno ao buscar pontuações.' });
+    }
 };
